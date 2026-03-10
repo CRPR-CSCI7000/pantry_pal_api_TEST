@@ -12,7 +12,8 @@ jobs:
       - name: Debug PR Info
         run: |
           echo "PR NUMBER: ${{ github.event.pull_request.number }}"
-          echo "REPOSITORY: ${{ github.repository }}"
+          echo "OWNER: ${{ github.repository_owner }}"
+          echo "REPO: ${{ github.event.repository.name }}"
           echo "PR URL: ${{ github.event.pull_request.html_url }}"
       
       - name: Send PR to AI reviewer
@@ -21,10 +22,10 @@ jobs:
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer ${{ secrets.AI_REVIEWER_API_KEY }}" \
           -d '{
-            "message": "Review this PR for me.",
+            "message": "Analyze this PR.",
             "agent_config": {
-              "pullRequestId": "${{ github.event.pull_request.number }}",
-              "repository": "${{ github.repository }}",
-              "pullRequestUrl": "${{ github.event.pull_request.html_url }}"
+              "owner": "${{ github.repository_owner }}",
+              "repo": "${{ github.event.repository.name }}",
+              "pr_number": "${{ github.event.pull_request.number }}"
             }
           }'
