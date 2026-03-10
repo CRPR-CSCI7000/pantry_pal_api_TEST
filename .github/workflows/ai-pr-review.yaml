@@ -13,7 +13,7 @@ jobs:
         run: |
           curl -X POST "${{ secrets.AI_REVIEWER_URL }}" \
           -H "Content-Type: application/json" \
-          -H "Authorization: ${{ secrets.AI_REVIEWER_API_KEY }}"
+          -H "Authorization: Bearer ${{ secrets.AI_REVIEWER_API_KEY }}" \
           -d '{
             "agent_config": {
               "pullRequestId": "${{ github.event.pull_request.number }}"
