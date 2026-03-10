@@ -15,6 +15,7 @@ jobs:
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer ${{ secrets.AI_REVIEWER_API_KEY }}" \
           -d '{
+            "message": "Review this PR for me.",
             "agent_config": {
               "pullRequestId": "${{ github.event.pull_request.number }}"
             }
