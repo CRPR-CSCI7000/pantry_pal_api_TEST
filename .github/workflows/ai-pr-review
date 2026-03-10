@@ -1,0 +1,21 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send PR to AI reviewer
+        run: |
+          curl -X POST "${{ secrets.AI_REVIEWER_URL }}" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: ${{ secrets.AI_REVIEWER_API_KEY }}"
+          -d '{
+            "agent_config": {
+              "pullRequestId": "${{ github.event.pull_request.number }}"
+            }
+          }'
