@@ -9,6 +9,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug PR Info
+        run: |
+          echo "PR NUMBER: ${{ github.event.pull_request.number }}"
+          echo "REPOSITORY: ${{ github.repository }}"
+          echo "PR URL: ${{ github.event.pull_request.html_url }}"
+      
       - name: Send PR to AI reviewer
         run: |
           curl -X POST "${{ secrets.AI_REVIEWER_URL }}" \
@@ -17,6 +23,8 @@ jobs:
           -d '{
             "message": "Review this PR for me.",
             "agent_config": {
-              "pullRequestId": "${{ github.event.pull_request.number }}"
+              "pullRequestId": "${{ github.event.pull_request.number }}",
+              "repository": "${{ github.repository }}",
+              "pullRequestUrl": "${{ github.event.pull_request.html_url }}"
             }
           }'
