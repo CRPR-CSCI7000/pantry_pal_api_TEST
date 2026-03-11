@@ -26,6 +26,7 @@ jobs:
             "agent_config": {
               "owner": "${{ github.repository_owner }}",
               "repo": "${{ github.event.repository.name }}",
-              "pr_number": "${{ github.event.pull_request.number }}"
+              "pr_number": "${{ github.event.pull_request.number }}",
+              "post_pr_comment": "true"
             }
           }'
