@@ -6,11 +6,21 @@ from services.db import get_db_connection
 
 pantry_bp = Blueprint('pantry', __name__, url_prefix='/api')
 
+SOURCES = [ 'UI', 'JWT_AUTHENTICATED_USER', 'SUPPORT']
+
 @pantry_bp.route('/pantry', methods=['POST'])
 @token_required
 def add_to_pantry(current_user_id):
     try:
         data = request.get_json()
+
+        # Validate source
+        source = data.get('source', None)
+        if source is None or source not in SOURCES:
+            return jsonify({ 
+                'success': False,
+                'error': 'source not supplied to call',
+                'status': 'SERVER_ERROR' }), 400
         
         # Validate required fields
         required_fields = ['productUPC', 'quantity']
