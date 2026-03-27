@@ -1,1 +1,0 @@
-"""Pantry Pal backend package."""

@@ -1,0 +1,1 @@
+"""PantryPal Django Backend."""
