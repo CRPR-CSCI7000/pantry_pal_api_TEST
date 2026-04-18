@@ -167,7 +167,7 @@ def update_pantry_item(current_user_id, pantry_id):
         update_values = []
         
         for key, value in data.items():
-            if key in ['quantity', 'quantityType', 'expiration_date', 'date_purchased']:
+            if key in ['quantity', 'quantity_type', 'expiration_date', 'date_purchased']:
                 update_fields.append(f"{key} = %s")
                 update_values.append(value)
         
