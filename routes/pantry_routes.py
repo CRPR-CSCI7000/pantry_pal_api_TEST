@@ -290,7 +290,7 @@ def get_user_pantry(current_user_id):
         
         return jsonify({
             'success': True,
-            'pantry_items': pantry_items
+            'items': pantry_items
         })
         
     except Exception as e:
