@@ -6,6 +6,25 @@ from services.db import get_db_connection
 
 pantry_bp = Blueprint('pantry', __name__, url_prefix='/api')
 
+_ALLOWED_UPDATE_FIELDS = frozenset([
+    'quantity',
+    'quantity_type',
+    'expiration_date',
+    'date_purchased',
+])
+
+_FIELD_COERCIONS = {
+    'quantity': float,
+}
+
+def _coerce_field(key, value):
+    """Apply type coercion for known fields. Returns value unchanged if no coercion defined."""
+    coerce = _FIELD_COERCIONS.get(key)
+    try:
+        return coerce(value) if coerce and value is not None else value
+    except (ValueError, TypeError):
+        return value
+
 @pantry_bp.route('/pantry', methods=['POST'])
 @token_required
 def add_to_pantry(current_user_id):
@@ -123,19 +142,19 @@ def add_to_pantry(current_user_id):
             'details': str(e)
         }), 500
 
-@pantry_bp.route('/pantry/<int:pantry_id>', methods=['PUT'])
+@pantry_bp.route('/pantry/<int:pantry_id>', methods=['PUT', 'PATCH'])
 @token_required
 def update_pantry_item(current_user_id, pantry_id):
     try:
         data = request.get_json()
-        
+
         if not data:
             return jsonify({
                 'success': False,
                 'error': 'No update data provided',
                 'status': 'VALIDATION_ERROR'
             }), 400
-        
+
         conn = get_db_connection()
         if not conn:
             return jsonify({
@@ -143,16 +162,15 @@ def update_pantry_item(current_user_id, pantry_id):
                 'error': 'Database connection failed',
                 'status': 'DB_ERROR'
             }), 503
-        
+
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # Verify pantry item exists and belongs to user
+
         cur.execute(
             "SELECT * FROM usersProducts WHERE pantryID = %s AND userID = %s",
             (pantry_id, current_user_id)
         )
         pantry_item = cur.fetchone()
-        
+
         if not pantry_item:
             cur.close()
             conn.close()
@@ -161,16 +179,22 @@ def update_pantry_item(current_user_id, pantry_id):
                 'error': 'Pantry item not found or does not belong to user',
                 'status': 'NOT_FOUND'
             }), 404
-        
-        # Build update query
+
+        # Only accept fields in the allowlist — unknown fields are silently dropped
         update_fields = []
         update_values = []
-        
+        rejected_fields = []
+
         for key, value in data.items():
-            if key in ['quantity', 'quantityType', 'expiration_date', 'date_purchased']:
+            if key in _ALLOWED_UPDATE_FIELDS:
                 update_fields.append(f"{key} = %s")
-                update_values.append(value)
-        
+                update_values.append(_coerce_field(key, value))
+            else:
+                rejected_fields.append(key)
+
+        if rejected_fields:
+            print(f"update_pantry_item: ignored unknown fields {rejected_fields} for pantry_id={pantry_id}")
+
         if not update_fields:
             cur.close()
             conn.close()
@@ -179,28 +203,26 @@ def update_pantry_item(current_user_id, pantry_id):
                 'error': 'No valid fields to update',
                 'status': 'VALIDATION_ERROR'
             }), 400
-        
-        # Add pantry_id for WHERE clause
+
         update_values.append(pantry_id)
-        
         update_query = f"""
-            UPDATE usersProducts 
+            UPDATE usersProducts
             SET {', '.join(update_fields)}
             WHERE pantryID = %s
             RETURNING *
         """
-        
+
         cur.execute(update_query, update_values)
         updated_item = cur.fetchone()
         conn.commit()
         cur.close()
         conn.close()
-        
+
         return jsonify({
             'success': True,
-            'pantry_item': updated_item
+            'pantry_item': updated_item,
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
